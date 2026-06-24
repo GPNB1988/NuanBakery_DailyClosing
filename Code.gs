@@ -125,6 +125,11 @@ function doPost(e) {
       case 'rejectEditRequest':   result = handleRejectEditRequest(data);   break;
       // File upload
       case 'uploadFile':       result = handleUploadFile(data);       break;
+      // User management (admin only)
+      case 'getUsers':         result = handleGetUsers(data);         break;
+      case 'addUser':          result = handleAddUser(data);          break;
+      case 'updateUser':       result = handleUpdateUser(data);       break;
+      case 'resetPassword':    result = handleResetPassword(data);    break;
       default:
         result = { ok: false, error: 'Unknown action: ' + action };
     }
@@ -672,6 +677,99 @@ function getOrCreateSheet(name, headers) {
     sheet.setFrozenRows(1);
   }
   return sheet;
+}
+
+
+// ============================================================
+//  USER MANAGEMENT HANDLERS
+// ============================================================
+
+function handleGetUsers(data) {
+  var sheet = getOrCreateSheet(SHEET_USERS, USER_HEADERS);
+  var rows  = sheet.getDataRange().getValues();
+  var users = [];
+  for (var i = 1; i < rows.length; i++) {
+    var row    = rows[i];
+    var active = row[U_ACTIVE];
+    users.push({
+      userId:     String(row[U_ID]),
+      username:   String(row[U_USER]),
+      name:       String(row[U_NAME]),
+      role:       String(row[U_ROLE]),
+      branchCode: String(row[U_BRANCH]),
+      active:     (active===true||active==='TRUE'||active==='true'||active===1||active==='1'),
+      createdAt:  String(row[U_CREATED]),
+    });
+  }
+  return { ok: true, users: users };
+}
+
+function handleAddUser(data) {
+  var u        = data.user   || {};
+  var username = String(u.username   || '').trim().toLowerCase();
+  var name     = String(u.name       || '').trim();
+  var role     = String(u.role       || 'staff');
+  var branch   = String(u.branchCode || '');
+  var password = String(u.password   || '');
+
+  if (!username)   return { ok: false, error: 'กรุณากรอกชื่อผู้ใช้' };
+  if (!name)       return { ok: false, error: 'กรุณากรอกชื่อ-นามสกุล' };
+  if (!password || password.length < 4) return { ok: false, error: 'รหัสผ่านต้องมีอย่างน้อย 4 ตัวอักษร' };
+
+  var isGlobalRole = GLOBAL_ROLES.indexOf(role) !== -1;
+  if (!isGlobalRole && !branch) return { ok: false, error: 'กรุณาเลือกสาขา' };
+
+  if (findUser(username)) return { ok: false, error: 'ชื่อผู้ใช้ "' + username + '" มีอยู่แล้ว' };
+
+  var sheet      = getOrCreateSheet(SHEET_USERS, USER_HEADERS);
+  var userId     = Utilities.getUuid();
+  var now        = new Date().toISOString();
+  var branchCode = isGlobalRole ? 'ALL' : branch;
+
+  sheet.appendRow([userId, username, hashPassword(password), name, role, branchCode, true, now]);
+
+  return {
+    ok: true, userId: userId,
+    user: { userId: userId, username: username, name: name, role: role, branchCode: branchCode, active: true, createdAt: now }
+  };
+}
+
+function handleUpdateUser(data) {
+  var u      = data.user || {};
+  var userId = String(u.userId || '');
+  if (!userId) return { ok: false, error: 'ไม่พบ UserID' };
+
+  var sheet = getOrCreateSheet(SHEET_USERS, USER_HEADERS);
+  var rows  = sheet.getDataRange().getValues();
+
+  for (var i = 1; i < rows.length; i++) {
+    if (String(rows[i][U_ID]) === userId) {
+      var r = i + 1;
+      if (u.name       !== undefined && u.name       !== null) sheet.getRange(r, U_NAME   + 1).setValue(String(u.name));
+      if (u.role       !== undefined && u.role       !== null) sheet.getRange(r, U_ROLE   + 1).setValue(String(u.role));
+      if (u.branchCode !== undefined && u.branchCode !== null) sheet.getRange(r, U_BRANCH + 1).setValue(String(u.branchCode));
+      if (u.active     !== undefined && u.active     !== null) sheet.getRange(r, U_ACTIVE + 1).setValue(!!u.active);
+      return { ok: true };
+    }
+  }
+  return { ok: false, error: 'ไม่พบผู้ใช้' };
+}
+
+function handleResetPassword(data) {
+  var userId   = String(data.userId   || '');
+  var password = String(data.password || '');
+  if (!userId)           return { ok: false, error: 'ไม่พบ UserID' };
+  if (password.length < 4) return { ok: false, error: 'รหัสผ่านต้องมีอย่างน้อย 4 ตัวอักษร' };
+
+  var sheet = getOrCreateSheet(SHEET_USERS, USER_HEADERS);
+  var rows  = sheet.getDataRange().getValues();
+  for (var i = 1; i < rows.length; i++) {
+    if (String(rows[i][U_ID]) === userId) {
+      sheet.getRange(i + 1, U_HASH + 1).setValue(hashPassword(password));
+      return { ok: true };
+    }
+  }
+  return { ok: false, error: 'ไม่พบผู้ใช้' };
 }
 
 

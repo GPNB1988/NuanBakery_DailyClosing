@@ -628,7 +628,13 @@
       <!-- ── HISTORY ── -->
       <sc-if value="{{ showHistory }}">
         <div style="padding:16px;max-width:480px;margin:0 auto;animation:fadeUp .4s ease">
-          <div style="font-family:'Noto Serif',serif;font-size:18px;font-weight:700;color:#2C1810;margin-bottom:14px">ประวัติการส่ง</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+            <div style="font-family:'Noto Serif',serif;font-size:18px;font-weight:700;color:#2C1810">ประวัติการส่ง</div>
+            <button onClick="{{ onExportCSV }}" style="background:rgba(61,139,61,.08);border:1px solid rgba(61,139,61,.25);border-radius:9px;color:#3d8b3d;padding:6px 12px;font-size:11px;font-family:'Noto Sans Thai',sans-serif;cursor:pointer;font-weight:600;display:flex;align-items:center;gap:5px">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+              Export CSV
+            </button>
+          </div>
           <div style="background:rgba(255,255,255,.9);border:1px solid rgba(209,162,94,.2);border-radius:14px;padding:14px;margin-bottom:14px;box-shadow:0 2px 10px rgba(139,100,50,.06)">
             <sc-if value="{{ isAdmin }}">
               <div style="margin-bottom:12px">
@@ -1018,7 +1024,7 @@
         <div style="padding:16px;max-width:480px;margin:0 auto;animation:fadeUp .4s ease">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
             <div style="font-family:'Noto Serif',serif;font-size:18px;font-weight:700;color:#2C1810">จัดการผู้ใช้</div>
-            <button style="background:linear-gradient(135deg,#b8863f,#D1A25E);border:none;border-radius:9px;color:#fff;padding:7px 14px;font-size:12px;font-family:'Noto Sans Thai',sans-serif;cursor:pointer;font-weight:600;box-shadow:0 2px 10px rgba(209,162,94,.3)">+ เพิ่มผู้ใช้</button>
+            <button onClick="{{ onAddUser }}" style="background:linear-gradient(135deg,#b8863f,#D1A25E);border:none;border-radius:9px;color:#fff;padding:7px 14px;font-size:12px;font-family:'Noto Sans Thai',sans-serif;cursor:pointer;font-weight:600;box-shadow:0 2px 10px rgba(209,162,94,.3)">+ เพิ่มผู้ใช้</button>
           </div>
           <sc-for list="{{ usersByBranch }}" as="grp" hint-placeholder-count="5">
             <div style="margin-bottom:16px">
@@ -1036,9 +1042,9 @@
                     <span style="{{ u.roleBadgeStyle }}">{{ u.roleLabel }}</span>
                   </div>
                   <div style="display:flex;gap:7px">
-                    <button style="flex:1;background:rgba(209,162,94,.08);border:1px solid rgba(209,162,94,.22);border-radius:8px;color:#8B6020;padding:7px;font-size:11px;font-family:'Noto Sans Thai',sans-serif;cursor:pointer;font-weight:500">แก้ไข</button>
-                    <button style="flex:1;background:rgba(209,162,94,.08);border:1px solid rgba(209,162,94,.22);border-radius:8px;color:#8B6020;padding:7px;font-size:11px;font-family:'Noto Sans Thai',sans-serif;cursor:pointer;font-weight:500">รีเซ็ต</button>
-                    <button style="flex:1;background:rgba(192,57,43,.06);border:1px solid rgba(192,57,43,.18);border-radius:8px;color:#c0392b;padding:7px;font-size:11px;font-family:'Noto Sans Thai',sans-serif;cursor:pointer;font-weight:500">ปิดใช้</button>
+                    <button onClick="{{ u.onEdit }}" style="flex:1;background:rgba(209,162,94,.08);border:1px solid rgba(209,162,94,.22);border-radius:8px;color:#8B6020;padding:7px;font-size:11px;font-family:'Noto Sans Thai',sans-serif;cursor:pointer;font-weight:500">แก้ไข</button>
+                    <button onClick="{{ u.onReset }}" style="flex:1;background:rgba(209,162,94,.08);border:1px solid rgba(209,162,94,.22);border-radius:8px;color:#8B6020;padding:7px;font-size:11px;font-family:'Noto Sans Thai',sans-serif;cursor:pointer;font-weight:500">รีเซ็ต</button>
+                    <button onClick="{{ u.onToggleActive }}" style="{{ u.toggleBtnStyle }}">{{ u.toggleActiveLabel }}</button>
                   </div>
                 </div>
               </sc-for>
@@ -1051,6 +1057,96 @@
             </div>
           </sc-if>
         </div>
+
+        <!-- ── ADD USER overlay ── -->
+        <sc-if value="{{ showAddUserForm }}">
+          <div onClick="{{ onCancelAddUser }}" style="position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:300"></div>
+          <div style="position:fixed;bottom:0;left:0;right:0;background:#fff;border-radius:20px 20px 0 0;padding:20px 16px 32px;z-index:301;max-width:480px;margin:0 auto;box-shadow:0 -8px 32px rgba(0,0,0,.12)">
+            <div style="font-family:'Noto Serif',serif;font-size:16px;font-weight:700;color:#2C1810;margin-bottom:14px">เพิ่มผู้ใช้ใหม่</div>
+            <div style="margin-bottom:10px">
+              <div style="font-size:10.5px;font-weight:600;color:rgba(139,96,40,.65);letter-spacing:.5px;margin-bottom:5px;font-family:'Outfit',sans-serif">ชื่อผู้ใช้ (Username)</div>
+              <input type="text" value="{{ addUserUsername }}" onChange="{{ onAddUserUsernameChange }}" placeholder="rc001" style="background:#FFF8F0;border:1px solid rgba(209,162,94,.3);border-radius:8px;color:#2C1810;padding:8px 11px;font-size:13px;font-family:'Noto Sans Thai',sans-serif;outline:none;width:100%;box-sizing:border-box">
+            </div>
+            <div style="margin-bottom:10px">
+              <div style="font-size:10.5px;font-weight:600;color:rgba(139,96,40,.65);letter-spacing:.5px;margin-bottom:5px;font-family:'Outfit',sans-serif">ชื่อ-นามสกุล</div>
+              <input type="text" value="{{ addUserName }}" onChange="{{ onAddUserNameChange }}" placeholder="สมใจ รักดี" style="background:#FFF8F0;border:1px solid rgba(209,162,94,.3);border-radius:8px;color:#2C1810;padding:8px 11px;font-size:13px;font-family:'Noto Sans Thai',sans-serif;outline:none;width:100%;box-sizing:border-box">
+            </div>
+            <div style="display:flex;gap:8px;margin-bottom:10px">
+              <div style="flex:1">
+                <div style="font-size:10.5px;font-weight:600;color:rgba(139,96,40,.65);letter-spacing:.5px;margin-bottom:5px;font-family:'Outfit',sans-serif">บทบาท</div>
+                <select value="{{ addUserRole }}" onChange="{{ onAddUserRoleChange }}" style="background:#FFF8F0;border:1px solid rgba(209,162,94,.3);border-radius:8px;color:#2C1810;padding:8px 11px;font-size:13px;font-family:'Noto Sans Thai',sans-serif;outline:none;width:100%;box-sizing:border-box;-webkit-appearance:none">
+                  <sc-for list="{{ addUserRoleOpts }}" as="ro" hint-placeholder-count="0"><option value="{{ ro.v }}">{{ ro.l }}</option></sc-for>
+                </select>
+              </div>
+              <sc-if value="{{ addUserShowBranch }}">
+              <div style="flex:1">
+                <div style="font-size:10.5px;font-weight:600;color:rgba(139,96,40,.65);letter-spacing:.5px;margin-bottom:5px;font-family:'Outfit',sans-serif">สาขา</div>
+                <select value="{{ addUserBranch }}" onChange="{{ onAddUserBranchChange }}" style="background:#FFF8F0;border:1px solid rgba(209,162,94,.3);border-radius:8px;color:#2C1810;padding:8px 11px;font-size:13px;font-family:'Noto Sans Thai',sans-serif;outline:none;width:100%;box-sizing:border-box;-webkit-appearance:none">
+                  <sc-for list="{{ branchOpts }}" as="bo" hint-placeholder-count="0"><option value="{{ bo.code }}">{{ bo.name }}</option></sc-for>
+                </select>
+              </div>
+              </sc-if>
+            </div>
+            <div style="margin-bottom:14px">
+              <div style="font-size:10.5px;font-weight:600;color:rgba(139,96,40,.65);letter-spacing:.5px;margin-bottom:5px;font-family:'Outfit',sans-serif">รหัสผ่าน</div>
+              <input type="password" value="{{ addUserPassword }}" onChange="{{ onAddUserPasswordChange }}" placeholder="อย่างน้อย 4 ตัวอักษร" style="background:#FFF8F0;border:1px solid rgba(209,162,94,.3);border-radius:8px;color:#2C1810;padding:8px 11px;font-size:13px;font-family:'Noto Sans Thai',sans-serif;outline:none;width:100%;box-sizing:border-box">
+            </div>
+            <div style="display:flex;gap:8px">
+              <button onClick="{{ onCancelAddUser }}" style="flex:1;background:rgba(0,0,0,.05);border:1px solid rgba(0,0,0,.1);border-radius:10px;color:rgba(44,24,16,.6);padding:12px;font-size:13px;font-family:'Noto Sans Thai',sans-serif;cursor:pointer;font-weight:600">ยกเลิก</button>
+              <button onClick="{{ onSaveAddUser }}" style="flex:2;background:linear-gradient(135deg,#b8863f,#D1A25E);border:none;border-radius:10px;color:#fff;padding:12px;font-size:13px;font-weight:700;font-family:'Noto Sans Thai',sans-serif;cursor:pointer">บันทึก</button>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- ── EDIT USER overlay ── -->
+        <sc-if value="{{ showEditUserForm }}">
+          <div onClick="{{ onCancelEditUser }}" style="position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:300"></div>
+          <div style="position:fixed;bottom:0;left:0;right:0;background:#fff;border-radius:20px 20px 0 0;padding:20px 16px 32px;z-index:301;max-width:480px;margin:0 auto;box-shadow:0 -8px 32px rgba(0,0,0,.12)">
+            <div style="font-family:'Noto Serif',serif;font-size:16px;font-weight:700;color:#2C1810;margin-bottom:14px">แก้ไขข้อมูลผู้ใช้</div>
+            <div style="margin-bottom:10px">
+              <div style="font-size:10.5px;font-weight:600;color:rgba(139,96,40,.65);letter-spacing:.5px;margin-bottom:5px;font-family:'Outfit',sans-serif">ชื่อ-นามสกุล</div>
+              <input type="text" value="{{ editUserName }}" onChange="{{ onEditUserNameChange }}" style="background:#FFF8F0;border:1px solid rgba(209,162,94,.3);border-radius:8px;color:#2C1810;padding:8px 11px;font-size:13px;font-family:'Noto Sans Thai',sans-serif;outline:none;width:100%;box-sizing:border-box">
+            </div>
+            <div style="display:flex;gap:8px;margin-bottom:14px">
+              <div style="flex:1">
+                <div style="font-size:10.5px;font-weight:600;color:rgba(139,96,40,.65);letter-spacing:.5px;margin-bottom:5px;font-family:'Outfit',sans-serif">บทบาท</div>
+                <select value="{{ editUserRole }}" onChange="{{ onEditUserRoleChange }}" style="background:#FFF8F0;border:1px solid rgba(209,162,94,.3);border-radius:8px;color:#2C1810;padding:8px 11px;font-size:13px;font-family:'Noto Sans Thai',sans-serif;outline:none;width:100%;box-sizing:border-box;-webkit-appearance:none">
+                  <sc-for list="{{ editUserRoleOpts }}" as="ro" hint-placeholder-count="0"><option value="{{ ro.v }}">{{ ro.l }}</option></sc-for>
+                </select>
+              </div>
+              <sc-if value="{{ editUserShowBranch }}">
+              <div style="flex:1">
+                <div style="font-size:10.5px;font-weight:600;color:rgba(139,96,40,.65);letter-spacing:.5px;margin-bottom:5px;font-family:'Outfit',sans-serif">สาขา</div>
+                <select value="{{ editUserBranch }}" onChange="{{ onEditUserBranchChange }}" style="background:#FFF8F0;border:1px solid rgba(209,162,94,.3);border-radius:8px;color:#2C1810;padding:8px 11px;font-size:13px;font-family:'Noto Sans Thai',sans-serif;outline:none;width:100%;box-sizing:border-box;-webkit-appearance:none">
+                  <sc-for list="{{ branchOpts }}" as="bo" hint-placeholder-count="0"><option value="{{ bo.code }}">{{ bo.name }}</option></sc-for>
+                </select>
+              </div>
+              </sc-if>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button onClick="{{ onCancelEditUser }}" style="flex:1;background:rgba(0,0,0,.05);border:1px solid rgba(0,0,0,.1);border-radius:10px;color:rgba(44,24,16,.6);padding:12px;font-size:13px;font-family:'Noto Sans Thai',sans-serif;cursor:pointer;font-weight:600">ยกเลิก</button>
+              <button onClick="{{ onSaveEditUser }}" style="flex:2;background:linear-gradient(135deg,#b8863f,#D1A25E);border:none;border-radius:10px;color:#fff;padding:12px;font-size:13px;font-weight:700;font-family:'Noto Sans Thai',sans-serif;cursor:pointer">บันทึก</button>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- ── RESET PASSWORD overlay ── -->
+        <sc-if value="{{ showResetPwdForm }}">
+          <div onClick="{{ onCancelResetPwd }}" style="position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:300"></div>
+          <div style="position:fixed;bottom:0;left:0;right:0;background:#fff;border-radius:20px 20px 0 0;padding:20px 16px 32px;z-index:301;max-width:480px;margin:0 auto;box-shadow:0 -8px 32px rgba(0,0,0,.12)">
+            <div style="font-family:'Noto Serif',serif;font-size:16px;font-weight:700;color:#2C1810;margin-bottom:5px">รีเซ็ตรหัสผ่าน</div>
+            <div style="font-size:11px;color:rgba(44,24,16,.5);margin-bottom:14px;font-family:'Noto Sans Thai',sans-serif">{{ resetPwdUserName }}</div>
+            <div style="margin-bottom:14px">
+              <div style="font-size:10.5px;font-weight:600;color:rgba(139,96,40,.65);letter-spacing:.5px;margin-bottom:5px;font-family:'Outfit',sans-serif">รหัสผ่านใหม่ (อย่างน้อย 4 ตัวอักษร)</div>
+              <input type="password" value="{{ resetPwdValue }}" onChange="{{ onResetPwdChange }}" placeholder="กรอกรหัสผ่านใหม่" style="background:#FFF8F0;border:1px solid rgba(209,162,94,.3);border-radius:8px;color:#2C1810;padding:8px 11px;font-size:13px;font-family:'Noto Sans Thai',sans-serif;outline:none;width:100%;box-sizing:border-box">
+            </div>
+            <div style="display:flex;gap:8px">
+              <button onClick="{{ onCancelResetPwd }}" style="flex:1;background:rgba(0,0,0,.05);border:1px solid rgba(0,0,0,.1);border-radius:10px;color:rgba(44,24,16,.6);padding:12px;font-size:13px;font-family:'Noto Sans Thai',sans-serif;cursor:pointer;font-weight:600">ยกเลิก</button>
+              <button onClick="{{ onSaveResetPwd }}" style="flex:2;background:linear-gradient(135deg,#b8863f,#D1A25E);border:none;border-radius:10px;color:#fff;padding:12px;font-size:13px;font-weight:700;font-family:'Noto Sans Thai',sans-serif;cursor:pointer">รีเซ็ต</button>
+            </div>
+          </div>
+        </sc-if>
+
       </sc-if>
 
       <!-- ── นำส่งเงินรายวัน + เงินคืน ── -->
@@ -1307,6 +1403,12 @@ class Component extends DCLogic {
     isSubmitting:false, submitProgress:'',
     // Data
     reports:[], editRequests:[],
+    // User management (admin)
+    users:[],
+    showAddUserForm:false,
+    addUserUsername:'', addUserName:'', addUserRole:'manager', addUserBranch:'', addUserPassword:'',
+    editUserId:null, editUserName:'', editUserRole:'', editUserBranch:'',
+    resetPwdUserId:null, resetPwdValue:'',
     histStart:'', histEnd:'', histBranch:'ALL',
   };
 
@@ -1328,7 +1430,9 @@ class Component extends DCLogic {
           const u=result.user;
           const isGlobal=u.role==='admin'||u.role==='hq';
           this.setState({user:u,view:isGlobal?'admin':'dashboard',isLoading:false});
-          await Promise.all([this.loadReports(u),this.loadDeposits(u),this.loadEditRequests(u)]);
+          const loads=[this.loadReports(u),this.loadDeposits(u),this.loadEditRequests(u)];
+          if(isGlobal)loads.push(this.loadUsers(u));
+          await Promise.all(loads);
         }else{
           localStorage.removeItem('nual_session');
           this.setState({isLoading:false});
@@ -1415,6 +1519,139 @@ class Component extends DCLogic {
     }catch(e){}
   }
 
+  async loadUsers(user){
+    const u=user||this.state.user;
+    if(!u||(u.role!=='admin'&&u.role!=='hq'))return;
+    try{
+      const result=await this.callAPI('getUsers',{token:this.getToken()});
+      if(result.ok){this.setState({users:result.users||[]});}
+    }catch(e){}
+  }
+
+  // ── User management actions ─────────────────────────────────
+  openAddUser(){
+    const firstBranch=this.state.branches[0]?.branchCode||'';
+    this.setState({showAddUserForm:true,addUserUsername:'',addUserName:'',addUserRole:'manager',addUserBranch:firstBranch,addUserPassword:''});
+  }
+  closeAddUser(){this.setState({showAddUserForm:false});}
+
+  async handleAddUser(){
+    const{addUserUsername,addUserName,addUserRole,addUserBranch,addUserPassword}=this.state;
+    if(!addUserUsername.trim()){this.showToast('กรุณากรอกชื่อผู้ใช้','error');return;}
+    if(!addUserName.trim()){this.showToast('กรุณากรอกชื่อ-นามสกุล','error');return;}
+    if(addUserPassword.length<4){this.showToast('รหัสผ่านต้องมีอย่างน้อย 4 ตัวอักษร','error');return;}
+    const isGlobalRole=addUserRole==='admin'||addUserRole==='hq';
+    if(!isGlobalRole&&!addUserBranch){this.showToast('กรุณาเลือกสาขา','error');return;}
+    try{
+      const result=await this.callAPI('addUser',{token:this.getToken(),user:{
+        username:addUserUsername.trim().toLowerCase(),name:addUserName.trim(),
+        role:addUserRole,branchCode:isGlobalRole?'ALL':addUserBranch,password:addUserPassword,
+      }});
+      if(result.ok){
+        this.setState(s=>({users:[result.user,...s.users],showAddUserForm:false}));
+        this.showToast('เพิ่มผู้ใช้ '+addUserName.trim()+' เรียบร้อยแล้ว','success');
+      }else{
+        this.showToast(result.error||'เพิ่มผู้ใช้ไม่สำเร็จ','error');
+      }
+    }catch(e){this.showToast('ไม่สามารถเชื่อมต่อระบบได้','error');}
+  }
+
+  openEditUser(u){
+    this.setState({editUserId:u.userId,editUserName:u.name,editUserRole:u.role,editUserBranch:u.branchCode==='ALL'?'':u.branchCode});
+  }
+  closeEditUser(){this.setState({editUserId:null});}
+
+  async handleUpdateUser(){
+    const{editUserId,editUserName,editUserRole,editUserBranch}=this.state;
+    if(!editUserName.trim()){this.showToast('กรุณากรอกชื่อ-นามสกุล','error');return;}
+    const isGlobalRole=editUserRole==='admin'||editUserRole==='hq';
+    if(!isGlobalRole&&!editUserBranch){this.showToast('กรุณาเลือกสาขา','error');return;}
+    try{
+      const result=await this.callAPI('updateUser',{token:this.getToken(),user:{
+        userId:editUserId,name:editUserName.trim(),
+        role:editUserRole,branchCode:isGlobalRole?'ALL':editUserBranch,
+      }});
+      if(result.ok){
+        this.setState(s=>({
+          users:s.users.map(u=>u.userId===editUserId?{...u,name:editUserName.trim(),role:editUserRole,branchCode:isGlobalRole?'ALL':editUserBranch}:u),
+          editUserId:null,
+        }));
+        this.showToast('แก้ไขข้อมูลผู้ใช้เรียบร้อยแล้ว','success');
+      }else{
+        this.showToast(result.error||'แก้ไขไม่สำเร็จ','error');
+      }
+    }catch(e){this.showToast('ไม่สามารถเชื่อมต่อระบบได้','error');}
+  }
+
+  async toggleUserActive(userId,currentActive){
+    const newActive=!currentActive;
+    this.setState(s=>({users:s.users.map(u=>u.userId===userId?{...u,active:newActive}:u)}));
+    try{
+      const result=await this.callAPI('updateUser',{token:this.getToken(),user:{userId,active:newActive}});
+      if(!result.ok){
+        this.setState(s=>({users:s.users.map(u=>u.userId===userId?{...u,active:currentActive}:u)}));
+        this.showToast(result.error||'อัปเดตสถานะไม่สำเร็จ','error');
+      }else{
+        this.showToast(newActive?'เปิดใช้งานบัญชีแล้ว':'ปิดใช้งานบัญชีแล้ว',newActive?'success':'info');
+      }
+    }catch(e){
+      this.setState(s=>({users:s.users.map(u=>u.userId===userId?{...u,active:currentActive}:u)}));
+      this.showToast('ไม่สามารถเชื่อมต่อระบบได้','error');
+    }
+  }
+
+  openResetPwd(userId){this.setState({resetPwdUserId:userId,resetPwdValue:''});}
+  closeResetPwd(){this.setState({resetPwdUserId:null,resetPwdValue:''});}
+
+  async handleResetPassword(){
+    const{resetPwdUserId,resetPwdValue}=this.state;
+    if(resetPwdValue.length<4){this.showToast('รหัสผ่านต้องมีอย่างน้อย 4 ตัวอักษร','error');return;}
+    try{
+      const result=await this.callAPI('resetPassword',{token:this.getToken(),userId:resetPwdUserId,password:resetPwdValue});
+      if(result.ok){
+        this.setState({resetPwdUserId:null,resetPwdValue:''});
+        this.showToast('รีเซ็ตรหัสผ่านเรียบร้อยแล้ว','success');
+      }else{
+        this.showToast(result.error||'รีเซ็ตรหัสผ่านไม่สำเร็จ','error');
+      }
+    }catch(e){this.showToast('ไม่สามารถเชื่อมต่อระบบได้','error');}
+  }
+
+  // ── CSV Export ──────────────────────────────────────────────
+  exportCSV(){
+    const{reports,histBranch,histStart,histEnd,user}=this.state;
+    const isGlobal=user?.role==='admin'||user?.role==='hq';
+    const filtered=reports.filter(r=>{
+      if(!isGlobal&&r.branch!==user?.branchCode)return false;
+      if(isGlobal&&histBranch!=='ALL'&&r.branch!==histBranch)return false;
+      if(histStart&&r.date<histStart)return false;
+      if(histEnd&&r.date>histEnd)return false;
+      return true;
+    }).sort((a,b)=>b.date.localeCompare(a.date));
+    const header='วันที่,สาขา,รหัสสาขา,ยอดขายรวม,ยอดรายได้,ค่าใช้จ่าย,บิลยกเลิก,คงเหลือ,เงินทอน,ผู้ส่ง,เวลาส่ง';
+    const rows=filtered.map(r=>[
+      r.date,
+      '"'+(r.branchName||'').replace(/"/g,'""')+'"',
+      r.branch,
+      r.totalSales||0,
+      r.totalIncome||0,
+      r.totalExpense||0,
+      r.totalCancelled||0,
+      r.remaining||0,
+      r.changeFloat||0,
+      '"'+(r.submittedBy||'').replace(/"/g,'""')+'"',
+      '"'+(r.submittedAt||'').replace(/"/g,'""')+'"',
+    ].join(','));
+    const csv='﻿'+header+'\n'+rows.join('\n');
+    const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;a.download='รายงานยอดขาย_'+(new Date().toISOString().slice(0,10))+'.csv';
+    document.body.appendChild(a);a.click();
+    document.body.removeChild(a);URL.revokeObjectURL(url);
+    this.showToast('ดาวน์โหลด CSV '+filtered.length+' รายการแล้ว','success');
+  }
+
   async handleLogin(){
     const{loginBranch,loginUser,loginPass,isLoading}=this.state;
     if(isLoading)return;
@@ -1428,7 +1665,9 @@ class Component extends DCLogic {
         const u=result.user;
         const isGlobal=u.role==='admin'||u.role==='hq';
         this.setState({user:u,view:isGlobal?'admin':'dashboard',isLoading:false,loginError:''});
-        await Promise.all([this.loadReports(u),this.loadDeposits(u),this.loadEditRequests(u)]);
+        const loads=[this.loadReports(u),this.loadDeposits(u),this.loadEditRequests(u)];
+        if(isGlobal)loads.push(this.loadUsers(u));
+        await Promise.all(loads);
       }else{
         this.setState({loginError:result.error||'เข้าสู่ระบบไม่สำเร็จ',isLoading:false});
       }
@@ -1952,10 +2191,40 @@ class Component extends DCLogic {
 
     const editRequestsUI=s.editRequests.map(req=>({...req,reportDateDisplay:this.fmtDate(req.reportDate),isPending:req.status==='pending',statusLabel:req.status==='pending'?'รอการอนุมัติ':req.status==='approved'?'อนุมัติแล้ว':'ปฏิเสธ',statusBadgeStyle:this.makeBadge(req.status==='pending'?'#c97a1a':req.status==='approved'?'#3d8b3d':'#c0392b'),onApprove:()=>this.approveEditRequest(req.id),onReject:()=>this.rejectEditRequest(req.id)}));
     // User management is administered in Google Sheets (Sprint 2: load via API)
-    const allUsers=[];
-    const usersByBranch=[];
-    const branchesWithoutUsers=[];
-    const emptyBranchCount=0;
+    // ── User management ──
+    const allUsers=s.users||[];
+    const INPUT_S='background:#FFF8F0;border:1px solid rgba(209,162,94,.3);border-radius:8px;color:#2C1810;padding:8px 11px;font-size:13px;font-family:\'Noto Sans Thai\',sans-serif;outline:none;width:100%;box-sizing:border-box';
+    const BTN_SEC='background:rgba(209,162,94,.08);border:1px solid rgba(209,162,94,.22);border-radius:8px;color:#8B6020;padding:7px;font-size:11px;font-family:\'Noto Sans Thai\',sans-serif;cursor:pointer;font-weight:500;flex:1';
+    const BTN_RED='background:rgba(192,57,43,.06);border:1px solid rgba(192,57,43,.18);border-radius:8px;color:#c0392b;padding:7px;font-size:11px;font-family:\'Noto Sans Thai\',sans-serif;cursor:pointer;font-weight:500;flex:1';
+    const BTN_GRN='background:rgba(61,139,61,.08);border:1px solid rgba(61,139,61,.22);border-radius:8px;color:#3d8b3d;padding:7px;font-size:11px;font-family:\'Noto Sans Thai\',sans-serif;cursor:pointer;font-weight:500;flex:1';
+    const ROLE_OPTS=[{v:'manager',l:'ผู้จัดการ'},{v:'assistant',l:'ผู้ช่วย'},{v:'staff',l:'พนักงาน'},{v:'hq',l:'HQ'},{v:'admin',l:'ผู้ดูแลระบบ'}];
+    const branchesSet=new Set(allUsers.filter(u=>u.branchCode!=='ALL').map(u=>u.branchCode));
+    const emptyBranchCount=s.branches.filter(b=>!branchesSet.has(b.branchCode)).length;
+    const globalUsersList=allUsers.filter(u=>u.branchCode==='ALL'||u.role==='admin'||u.role==='hq');
+    const branchGroupsList=s.branches.map(b=>{
+      const bu=allUsers.filter(u=>u.branchCode===b.branchCode&&u.role!=='admin'&&u.role!=='hq');
+      return{code:b.branchCode,name:b.branchName,count:bu.length,users:bu.map(u=>({
+        ...u,roleLabel:this.rLabel(u.role),roleBadgeStyle:this.makeBadge(this.rColor(u.role)),
+        toggleActiveLabel:u.active?'ปิดใช้':'เปิดใช้',
+        toggleBtnStyle:u.active?BTN_RED:BTN_GRN,
+        onEdit:()=>this.openEditUser(u),
+        onReset:()=>this.openResetPwd(u.userId),
+        onToggleActive:()=>this.toggleUserActive(u.userId,u.active),
+      }))};
+    }).filter(b=>b.users.length>0);
+    const globalGroup=globalUsersList.length>0?[{code:'ALL',name:'Admin / HQ',count:globalUsersList.length,users:globalUsersList.map(u=>({
+      ...u,roleLabel:this.rLabel(u.role),roleBadgeStyle:this.makeBadge(this.rColor(u.role)),
+      toggleActiveLabel:u.active?'ปิดใช้':'เปิดใช้',
+      toggleBtnStyle:u.active?BTN_RED:BTN_GRN,
+      onEdit:()=>this.openEditUser(u),
+      onReset:()=>this.openResetPwd(u.userId),
+      onToggleActive:()=>this.toggleUserActive(u.userId,u.active),
+    }))}]:[];
+    const usersByBranch=[...globalGroup,...branchGroupsList];
+    // Add User form state
+    const addUserIsGlobal=s.addUserRole==='admin'||s.addUserRole==='hq';
+    const editUserIsGlobal=s.editUserRole==='admin'||s.editUserRole==='hq';
+    const resetPwdUser=s.resetPwdUserId?allUsers.find(u=>u.userId===s.resetPwdUserId):null;
     const allReportsUI=s.reports.slice().sort((a,b)=>b.date.localeCompare(a.date)).map(r=>this.decorateReport({...r,totalSalesFmt:this.fmt(r.totalSales),totalIncomeFmt:this.fmt(r.totalIncome),remainingFmt:this.fmt(r.remaining),dateDisplay:this.fmtDate(r.date),statusLabel:this.sLabel(r.status),statusBadgeStyle:this.makeBadge(this.sColor(r.status))}));
     const PREVIEW_LIMIT=9;
     // Ordered multi-select: ordered (by seq) first, then unordered (upload order)
@@ -2295,6 +2564,39 @@ class Component extends DCLogic {
       onAdminPeriodNextMonth:()=>{const now=new Date();if(s.adminPeriodYear>now.getFullYear()||(s.adminPeriodYear===now.getFullYear()&&s.adminPeriodMonth>=now.getMonth()))return;const nm=s.adminPeriodMonth===11?0:s.adminPeriodMonth+1;const ny=s.adminPeriodMonth===11?s.adminPeriodYear+1:s.adminPeriodYear;this.setState({adminPeriodMonth:nm,adminPeriodYear:ny});},
       chartBars, allReportsUI, editRequestsUI, allUsers,
       usersByBranch, emptyBranchCount, hasEmptyBranches:emptyBranchCount>0,
+      onAddUser:()=>this.openAddUser(),
+      onExportCSV:()=>this.exportCSV(),
+      // Add User form
+      showAddUserForm:s.showAddUserForm,
+      addUserUsername:s.addUserUsername, addUserName:s.addUserName,
+      addUserRole:s.addUserRole, addUserBranch:s.addUserBranch, addUserPassword:s.addUserPassword,
+      addUserShowBranch:!addUserIsGlobal,
+      addUserRoleOpts:ROLE_OPTS,
+      branchOpts:s.branches.map(b=>({code:b.branchCode,name:b.branchName})),
+      onAddUserUsernameChange:(e)=>this.setState({addUserUsername:e.target.value}),
+      onAddUserNameChange:(e)=>this.setState({addUserName:e.target.value}),
+      onAddUserRoleChange:(e)=>this.setState({addUserRole:e.target.value}),
+      onAddUserBranchChange:(e)=>this.setState({addUserBranch:e.target.value}),
+      onAddUserPasswordChange:(e)=>this.setState({addUserPassword:e.target.value}),
+      onSaveAddUser:()=>this.handleAddUser(),
+      onCancelAddUser:()=>this.closeAddUser(),
+      // Edit User form
+      showEditUserForm:!!s.editUserId,
+      editUserName:s.editUserName, editUserRole:s.editUserRole, editUserBranch:s.editUserBranch,
+      editUserShowBranch:!editUserIsGlobal,
+      editUserRoleOpts:ROLE_OPTS,
+      onEditUserNameChange:(e)=>this.setState({editUserName:e.target.value}),
+      onEditUserRoleChange:(e)=>this.setState({editUserRole:e.target.value}),
+      onEditUserBranchChange:(e)=>this.setState({editUserBranch:e.target.value}),
+      onSaveEditUser:()=>this.handleUpdateUser(),
+      onCancelEditUser:()=>this.closeEditUser(),
+      // Reset Password form
+      showResetPwdForm:!!s.resetPwdUserId,
+      resetPwdValue:s.resetPwdValue,
+      resetPwdUserName:resetPwdUser?resetPwdUser.name:'',
+      onResetPwdChange:(e)=>this.setState({resetPwdValue:e.target.value}),
+      onSaveResetPwd:()=>this.handleResetPassword(),
+      onCancelResetPwd:()=>this.closeResetPwd(),
       pendingEditBadge:pendingEdit>0?` (${pendingEdit})`:'',
       adminTabOverview:s.adminTab==='overview', adminTabBranches:s.adminTab==='branches',
       adminTabReports:s.adminTab==='reports', adminTabRequests:s.adminTab==='requests',
