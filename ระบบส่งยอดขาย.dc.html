@@ -618,7 +618,10 @@
             </sc-if>
           </div>
 
-          <button onClick="{{ onSubmitReport }}" style="width:100%;background:linear-gradient(135deg,#b8863f,#D1A25E,#e8a94a);border:none;border-radius:14px;color:#fff;padding:15px;font-size:16px;font-weight:700;font-family:'Noto Sans Thai',sans-serif;cursor:pointer;box-shadow:0 6px 24px rgba(209,162,94,.4);margin-bottom:6px;letter-spacing:.5px">ส่งรายงาน</button>
+          <button onClick="{{ onSubmitReport }}" disabled="{{ submitBtnDisabled }}" style="width:100%;background:linear-gradient(135deg,#b8863f,#D1A25E,#e8a94a);border:none;border-radius:14px;color:#fff;padding:15px;font-size:16px;font-weight:700;font-family:'Noto Sans Thai',sans-serif;cursor:pointer;box-shadow:0 6px 24px rgba(209,162,94,.4);margin-bottom:6px;letter-spacing:.5px;transition:opacity .2s">{{ submitBtnLabel }}</button>
+          <sc-if value="{{ isSubmitting }}">
+            <div style="margin-top:8px;text-align:center;font-size:12px;color:rgba(139,96,40,.6);font-family:'Noto Sans Thai',sans-serif;animation:pulse 1.5s infinite">{{ submitProgress }}</div>
+          </sc-if>
         </div>
       </sc-if>
 
@@ -1300,6 +1303,8 @@ class Component extends DCLogic {
     adminPeriodYear:new Date().getFullYear(), adminPeriodMonth:new Date().getMonth(),
     // Toast
     toastVisible:false, toastMsg:'', toastType:'success', _toastTimer:null,
+    // Submission
+    isSubmitting:false, submitProgress:'',
     // Data
     reports:[], editRequests:[],
     histStart:'', histEnd:'', histBranch:'ALL',
@@ -1307,20 +1312,7 @@ class Component extends DCLogic {
 
   async componentDidMount(){
     const today=new Date().toISOString().slice(0,10);
-    const d1=new Date();d1.setDate(d1.getDate()-1);const yest=d1.toISOString().slice(0,10);
-    const d2=new Date();d2.setDate(d2.getDate()-2);const day2=d2.toISOString().slice(0,10);
-    const mk=(t,h)=>new Date(t+'T'+h+':00').toISOString();
-    const reports=[
-      {id:'r1',branch:'RC',branchName:'รวมโชค',date:today,totalSales:12754,totalIncome:9166,totalExpense:850,remaining:3588,incomeItems:[{cat:'grab',label:'Grab Food',amount:400},{cat:'grab',label:'Grab Food',amount:435},{cat:'qr',label:'QR / PromptPay',amount:5861},{cat:'qr',label:'QR / PromptPay',amount:1480},{cat:'qr',label:'QR / PromptPay',amount:100},{cat:'qr',label:'QR / PromptPay',amount:890}],status:'submitted',submittedBy:'สมใจ รักดี',submittedAt:mk(today,'20:28'),attachments:[]},
-      {id:'r2',branch:'CTF',branchName:'เซ็นทรัลเฟส เชียงใหม่',date:today,totalSales:23600,totalIncome:19200,totalExpense:1200,totalCancelled:560,remaining:4400,incomeItems:[{cat:'grab',label:'Grab Food',amount:2100},{cat:'lineman',label:'LINE MAN',amount:1800},{cat:'shopee',label:'Shopee Food',amount:950},{cat:'qr',label:'QR / PromptPay',amount:12350},{cat:'cash',label:'เงินสด',amount:2000}],status:'submitted',submittedBy:'ประยุทธ์ สบาย',submittedAt:mk(today,'19:44'),attachments:[]},
-      {id:'r3',branch:'ABJ',branchName:'อบจ. เชียงใหม่',date:today,totalSales:8900,totalIncome:6750,totalExpense:400,remaining:2150,incomeItems:[{cat:'grab',label:'Grab Food',amount:750},{cat:'qr',label:'QR / PromptPay',amount:4200},{cat:'cash',label:'เงินสด',amount:1800}],status:'submitted',submittedBy:'สาวิตรี ใจดี',submittedAt:mk(today,'21:05'),attachments:[]},
-      {id:'r4',branch:'BCDJ',branchName:'บิ๊กซีดอนจั่น',date:today,totalSales:18200,totalIncome:14600,totalExpense:0,remaining:3600,incomeItems:[{cat:'grab',label:'Grab Food',amount:1500},{cat:'lineman',label:'LINE MAN',amount:1200},{cat:'qr',label:'QR / PromptPay',amount:9800},{cat:'scb',label:'โอนเข้า SCB',amount:2100}],status:'submitted',submittedBy:'บุญเรือง สว่าง',submittedAt:mk(today,'20:12'),attachments:[]},
-      {id:'r5',branch:'WL',branchName:'วังหลัง',date:today,totalSales:15100,totalIncome:12600,totalExpense:320,totalCancelled:180,remaining:2500,incomeItems:[{cat:'grab',label:'Grab Food',amount:1800},{cat:'lineman',label:'LINE MAN',amount:1500},{cat:'shopee',label:'Shopee Food',amount:600},{cat:'qr',label:'QR / PromptPay',amount:7200},{cat:'cash',label:'เงินสด',amount:1500}],status:'submitted',submittedBy:'นิรันดร์ ยั่งยืน',submittedAt:mk(today,'20:58'),attachments:[]},
-      {id:'r6',branch:'RC',branchName:'รวมโชค',date:yest,totalSales:11200,totalIncome:7770,totalExpense:600,remaining:3430,incomeItems:[{cat:'grab',label:'Grab Food',amount:380},{cat:'lineman',label:'LINE MAN',amount:290},{cat:'qr',label:'QR / PromptPay',amount:5200},{cat:'cash',label:'เงินสด',amount:1900}],status:'submitted',submittedBy:'สมใจ รักดี',submittedAt:mk(yest,'21:15'),attachments:[]},
-      {id:'r7',branch:'RC',branchName:'รวมโชค',date:day2,totalSales:9800,totalIncome:6950,totalExpense:0,remaining:2850,incomeItems:[{cat:'grab',label:'Grab Food',amount:350},{cat:'qr',label:'QR / PromptPay',amount:4500},{cat:'cash',label:'เงินสด',amount:2100}],status:'submitted',submittedBy:'วิไล สุขสัน',submittedAt:mk(day2,'22:01'),attachments:[]},
-    ];
-    const editRequests=[{id:'req1',branch:'RC',branchName:'รวมโชค',reportDate:yest,requestedBy:'สมใจ รักดี',reason:'กรอกยอดขายผิด ควรเป็น 11,500 บาท (เดิมกรอก 11,200 บาท)',status:'pending',requestedAt:new Date(Date.now()-7200000).toISOString()}];
-    this.setState({reports,editRequests,reportDate:today});
+    this.setState({reportDate:today});
 
     // Load branch list from GAS backend
     await this.loadBranches();
@@ -1336,6 +1328,7 @@ class Component extends DCLogic {
           const u=result.user;
           const isGlobal=u.role==='admin'||u.role==='hq';
           this.setState({user:u,view:isGlobal?'admin':'dashboard',isLoading:false});
+          await Promise.all([this.loadReports(u),this.loadDeposits(u),this.loadEditRequests(u)]);
         }else{
           localStorage.removeItem('nual_session');
           this.setState({isLoading:false});
@@ -1374,6 +1367,54 @@ class Component extends DCLogic {
     }
   }
 
+  getToken(){
+    try{const s=localStorage.getItem('nual_session');if(s)return JSON.parse(s).token;}catch(e){}
+    return '';
+  }
+
+  async loadReports(user){
+    const u=user||this.state.user;
+    if(!u)return;
+    try{
+      const isGlobal=u.role==='admin'||u.role==='hq';
+      const dateFrom=new Date();dateFrom.setDate(dateFrom.getDate()-90);
+      const result=await this.callAPI('getReports',{
+        token:this.getToken(),
+        branchCode:isGlobal?'ALL':u.branchCode,
+        dateFrom:dateFrom.toISOString().slice(0,10),
+      });
+      if(result.ok){this.setState({reports:result.reports||[]});}
+    }catch(e){}
+  }
+
+  async loadDeposits(user){
+    const u=user||this.state.user;
+    if(!u)return;
+    try{
+      const isGlobal=u.role==='admin'||u.role==='hq';
+      const result=await this.callAPI('getDeposits',{
+        token:this.getToken(),
+        branchCode:isGlobal?'ALL':u.branchCode,
+      });
+      if(result.ok){
+        this.setState({deposits:result.deposits||[],refundRequests:result.refundRequests||[]});
+      }
+    }catch(e){}
+  }
+
+  async loadEditRequests(user){
+    const u=user||this.state.user;
+    if(!u)return;
+    try{
+      const isGlobal=u.role==='admin'||u.role==='hq';
+      const result=await this.callAPI('getEditRequests',{
+        token:this.getToken(),
+        branchCode:isGlobal?'ALL':u.branchCode,
+      });
+      if(result.ok){this.setState({editRequests:result.editRequests||[]});}
+    }catch(e){}
+  }
+
   async handleLogin(){
     const{loginBranch,loginUser,loginPass,isLoading}=this.state;
     if(isLoading)return;
@@ -1387,6 +1428,7 @@ class Component extends DCLogic {
         const u=result.user;
         const isGlobal=u.role==='admin'||u.role==='hq';
         this.setState({user:u,view:isGlobal?'admin':'dashboard',isLoading:false,loginError:''});
+        await Promise.all([this.loadReports(u),this.loadDeposits(u),this.loadEditRequests(u)]);
       }else{
         this.setState({loginError:result.error||'เข้าสู่ระบบไม่สำเร็จ',isLoading:false});
       }
@@ -1498,13 +1540,27 @@ class Component extends DCLogic {
 
   handleFileChange(e){
     const files=Array.from(e.target.files);
-    const atts=files.map(f=>({id:Date.now()+Math.random(),name:f.name,url:URL.createObjectURL(f),seq:null}));
-    this.setState(s=>({attachments:[...s.attachments,...atts]}));e.target.value='';
+    files.forEach(f=>{
+      const reader=new FileReader();
+      reader.onload=(ev)=>{
+        const att={id:Date.now()+Math.random(),name:f.name,size:f.size,type:f.type,url:ev.target.result,seq:null};
+        this.setState(s=>({attachments:[...s.attachments,att]}));
+      };
+      reader.readAsDataURL(f);
+    });
+    e.target.value='';
   }
   handleDocChange(e){
     const files=Array.from(e.target.files);
-    const docs=files.map(f=>({id:Date.now()+Math.random(),name:f.name,size:f.size,ext:(f.name.split('.').pop()||'').toLowerCase(),seq:null}));
-    this.setState(s=>({salesDocs:[...s.salesDocs,...docs]}));e.target.value='';
+    files.forEach(f=>{
+      const reader=new FileReader();
+      reader.onload=(ev)=>{
+        const doc={id:Date.now()+Math.random(),name:f.name,size:f.size,type:f.type,ext:(f.name.split('.').pop()||'').toLowerCase(),url:ev.target.result,seq:null};
+        this.setState(s=>({salesDocs:[...s.salesDocs,doc]}));
+      };
+      reader.readAsDataURL(f);
+    });
+    e.target.value='';
   }
   // Ordered multi-select: tap to assign sequence, tap again to remove
   tapOrder(key,id){
@@ -1520,56 +1576,171 @@ class Component extends DCLogic {
   clearOrder(key){this.setState(s=>({[key]:s[key].map(a=>({...a,seq:null}))}));}
 
   // นำส่งเงินรายวัน + เงินคืน
-  submitDeposit(){
+  async submitDeposit(){
     const{user,depDate,depAmount,depBank,depType,depNote}=this.state;
     const amt=parseFloat(depAmount)||0;
     if(amt<=0){this.showToast('กรุณากรอกจำนวนเงิน','error');return;}
     const bank=this.BANKS.find(b=>b.id===depBank);
-    const base={id:'d'+Date.now(),branch:user.branchCode,branchName:user.branchName,date:depDate,amount:amt,bank:depBank,bankLabel:bank?bank.label:depBank,note:depNote,by:user.name,at:new Date().toISOString()};
-    if(depType==='refund'){
-      this.setState(s=>({refundRequests:[{...base,status:'pending'},...s.refundRequests],depAmount:'',depNote:''}));
-      this.showToast('ส่งคำขอเงินคืนแล้ว · รอ Admin อนุมัติ','info');
-    }else{
-      this.setState(s=>({deposits:[{...base,status:'confirmed'},...s.deposits],depAmount:'',depNote:''}));
-      this.showToast('บันทึกการนำส่งเงินแล้ว','success');
+    const depositData={branchCode:user.branchCode,branchName:user.branchName,date:depDate,amount:amt,bank:depBank,bankLabel:bank?bank.label:depBank,note:depNote,depType,submittedBy:user.name};
+    try{
+      const result=await this.callAPI('submitDeposit',{deposit:depositData});
+      if(result.ok){
+        const dep={...depositData,id:result.depositId,branch:user.branchCode,by:user.name,at:new Date().toISOString(),status:result.status};
+        if(depType==='refund'){
+          this.setState(s=>({refundRequests:[dep,...s.refundRequests],depAmount:'',depNote:''}));
+          this.showToast('ส่งคำขอเงินคืนแล้ว · รอ Admin อนุมัติ','info');
+        }else{
+          this.setState(s=>({deposits:[dep,...s.deposits],depAmount:'',depNote:''}));
+          this.showToast('บันทึกการนำส่งเงินแล้ว','success');
+        }
+      }else{
+        this.showToast(result.error||'บันทึกไม่สำเร็จ กรุณาลองใหม่','error');
+      }
+    }catch(e){
+      const base={id:'d'+Date.now(),branch:user.branchCode,branchName:user.branchName,date:depDate,amount:amt,bank:depBank,bankLabel:bank?bank.label:depBank,note:depNote,by:user.name,at:new Date().toISOString()};
+      if(depType==='refund'){
+        this.setState(s=>({refundRequests:[{...base,status:'pending'},...s.refundRequests],depAmount:'',depNote:''}));
+        this.showToast('ส่งคำขอเงินคืนแล้ว (ออฟไลน์)','info');
+      }else{
+        this.setState(s=>({deposits:[{...base,status:'confirmed'},...s.deposits],depAmount:'',depNote:''}));
+        this.showToast('บันทึกการนำส่งเงินแล้ว (ออฟไลน์)','success');
+      }
     }
   }
   pushNotif(branch,type,title,message,view){
     const n={id:'n'+Date.now()+Math.random(),branch,type,title,message,view,read:false,at:new Date().toISOString()};
     this.setState(s=>({notifications:[n,...s.notifications]}));
   }
-  approveRefund(id){const req=this.state.refundRequests.find(r=>r.id===id);this.setState(s=>({refundRequests:s.refundRequests.map(r=>r.id===id?{...r,status:'approved'}:r)}));if(req)this.pushNotif(req.branch,'success','คำขอเงินคืนได้รับการอนุมัติ','เงินคืน ฿'+this.fmt(req.amount)+' ('+req.bankLabel+') อนุมัติแล้ว','deposit');this.showToast('อนุมัติเงินคืนแล้ว','success');}
-  rejectRefund(id){const req=this.state.refundRequests.find(r=>r.id===id);this.setState(s=>({refundRequests:s.refundRequests.map(r=>r.id===id?{...r,status:'rejected'}:r)}));if(req)this.pushNotif(req.branch,'error','คำขอเงินคืนถูกปฏิเสธ','เงินคืน ฿'+this.fmt(req.amount)+' ไม่ได้รับการอนุมัติ','deposit');this.showToast('ปฏิเสธคำขอเงินคืน','error');}
+  async approveRefund(id){
+    const req=this.state.refundRequests.find(r=>r.id===id);
+    this.setState(s=>({refundRequests:s.refundRequests.map(r=>r.id===id?{...r,status:'approved'}:r)}));
+    if(req)this.pushNotif(req.branch,'success','คำขอเงินคืนได้รับการอนุมัติ','เงินคืน ฿'+this.fmt(req.amount)+' ('+req.bankLabel+') อนุมัติแล้ว','deposit');
+    this.showToast('อนุมัติเงินคืนแล้ว','success');
+    try{await this.callAPI('updateDepositStatus',{depositId:id,status:'approved',reviewedBy:this.state.user?.name||''});}catch(e){}
+  }
+  async rejectRefund(id){
+    const req=this.state.refundRequests.find(r=>r.id===id);
+    this.setState(s=>({refundRequests:s.refundRequests.map(r=>r.id===id?{...r,status:'rejected'}:r)}));
+    if(req)this.pushNotif(req.branch,'error','คำขอเงินคืนถูกปฏิเสธ','เงินคืน ฿'+this.fmt(req.amount)+' ไม่ได้รับการอนุมัติ','deposit');
+    this.showToast('ปฏิเสธคำขอเงินคืน','error');
+    try{await this.callAPI('updateDepositStatus',{depositId:id,status:'rejected',reviewedBy:this.state.user?.name||''});}catch(e){}
+  }
 
   // ขอแก้ไขยอด (manager → admin approval)
   openEditReq(id){this.setState({editReqReportId:id,editReqReason:''});}
   cancelEditReq(){this.setState({editReqReportId:null,editReqReason:''});}
-  submitEditReq(){
+  async submitEditReq(){
     const{editReqReportId,editReqReason,user,reports}=this.state;
     if(!editReqReason.trim()){this.showToast('กรุณากรอกเหตุผลในการขอแก้ไข','error');return;}
     const rep=reports.find(r=>r.id===editReqReportId);
     if(!rep)return;
-    const req={id:'req'+Date.now(),branch:rep.branch,branchName:rep.branchName,reportId:rep.id,reportDate:rep.date,requestedBy:user.name,reason:editReqReason.trim(),status:'pending',requestedAt:new Date().toISOString()};
-    this.setState(s=>({editRequests:[req,...s.editRequests],editReqReportId:null,editReqReason:''}));
-    this.showToast('ส่งคำขอแก้ไขแล้ว · รอ Admin อนุมัติ','info');
+    const reqData={reportId:rep.id,branchCode:rep.branch,branchName:rep.branchName,reportDate:rep.date,requestedBy:user.name,reason:editReqReason.trim()};
+    try{
+      const result=await this.callAPI('submitEditRequest',{request:reqData});
+      if(result.ok){
+        const req={...reqData,id:result.requestId,branch:rep.branch,status:'pending',requestedAt:new Date().toISOString()};
+        this.setState(s=>({editRequests:[req,...s.editRequests],editReqReportId:null,editReqReason:''}));
+        this.showToast('ส่งคำขอแก้ไขแล้ว · รอ Admin อนุมัติ','info');
+      }else{
+        this.showToast(result.error||'ส่งคำขอไม่สำเร็จ กรุณาลองใหม่','error');
+      }
+    }catch(e){
+      const req={id:'req'+Date.now(),branch:rep.branch,branchName:rep.branchName,reportId:rep.id,reportDate:rep.date,requestedBy:user.name,reason:editReqReason.trim(),status:'pending',requestedAt:new Date().toISOString()};
+      this.setState(s=>({editRequests:[req,...s.editRequests],editReqReportId:null,editReqReason:''}));
+      this.showToast('ส่งคำขอแก้ไขแล้ว (ออฟไลน์)','info');
+    }
   }
 
-  submitReport(){
-    const{user,reportDate,changeFloat,manualSales,incomeItems,expenseItems,cancelledBills,attachments}=this.state;
+  async submitReport(){
+    if(this.state.isSubmitting)return;
+    const{user,reportDate,changeFloat,manualSales,incomeItems,expenseItems,cancelledBills,attachments,salesDocs,reports}=this.state;
+    // Validation
     const ti=incomeItems.reduce((s,i)=>s+(parseFloat(i.amount)||0),0);
     if(ti<=0){this.showToast('กรุณากรอกยอดขายอย่างน้อย 1 ช่องทาง','error');return;}
+    if(!reportDate){this.showToast('กรุณาเลือกวันที่รายงาน','error');return;}
+    const dup=reports.find(r=>r.branch===user.branchCode&&r.date===reportDate);
+    if(dup){this.showToast('มีรายงานสำหรับวันที่ '+this.fmtDate(reportDate)+' แล้ว ไม่สามารถส่งซ้ำได้','error');return;}
+    this.setState({isSubmitting:true,submitProgress:'กำลังเตรียมข้อมูล...'});
+    // Upload slip attachments to Drive
+    let uploadedAtts=[...attachments];
+    for(let i=0;i<attachments.length;i++){
+      const att=attachments[i];
+      if(att.url&&att.url.startsWith('data:')){
+        try{
+          this.setState({submitProgress:'กำลังอัปโหลดสลิป '+(i+1)+'/'+attachments.length+'...'});
+          const r=await this.callAPI('uploadFile',{fileName:att.name,mimeType:att.type||'image/jpeg',base64Data:att.url,folder:'slips',branchCode:user.branchCode,reportDate});
+          if(r.ok)uploadedAtts[i]={...att,url:r.driveUrl,driveId:r.driveId};
+        }catch(e){}
+      }
+    }
+    // Upload sales docs to Drive
+    let uploadedDocs=[...salesDocs];
+    for(let i=0;i<salesDocs.length;i++){
+      const doc=salesDocs[i];
+      if(doc.url&&doc.url.startsWith('data:')){
+        try{
+          this.setState({submitProgress:'กำลังอัปโหลดเอกสาร '+(i+1)+'/'+salesDocs.length+'...'});
+          const r=await this.callAPI('uploadFile',{fileName:doc.name,mimeType:doc.type||'application/octet-stream',base64Data:doc.url,folder:'docs',branchCode:user.branchCode,reportDate});
+          if(r.ok)uploadedDocs[i]={...doc,url:r.driveUrl,driveId:r.driveId};
+        }catch(e){}
+      }
+    }
+    this.setState({submitProgress:'กำลังบันทึกรายงาน...'});
     const te=expenseItems.reduce((s,i)=>s+(parseFloat(i.amount)||0),0);
     const tc=cancelledBills.reduce((s,i)=>s+(parseFloat(i.amount)||0),0);
     const cf=parseFloat(changeFloat)||0;
     const ms=parseFloat(manualSales)||0;
-    const r={id:'r'+Date.now(),branch:user.branchCode,branchName:user.branchName,date:reportDate,totalSales:ms>0?ms:ti,manualSales:ms,totalIncome:ti,totalExpense:te,totalCancelled:tc,remaining:ti-te,changeFloat:cf,incomeItems:incomeItems.map(i=>({cat:i.cat,label:this.INCOME_CATS.find(c=>c.id===i.cat)?.label||i.cat,amount:parseFloat(i.amount)||0,note:i.note||''})),expenseItems:expenseItems.map(i=>({cat:i.cat,label:this.EXPENSE_CATS.find(c=>c.id===i.cat)?.label||i.cat,amount:parseFloat(i.amount)||0,note:i.note||''})),cancelledBills:cancelledBills.map(b=>({billNo:b.billNo,amount:parseFloat(b.amount)||0,reason:b.reason})),status:'submitted',submittedBy:user.name,submittedAt:new Date().toISOString(),attachments};
-    const today=new Date().toISOString().slice(0,10);
-    this.setState(s=>({reports:[r,...s.reports],view:'dashboard',changeFloat:'',manualSales:'',incomeItems:[{id:1,cat:'cash',amount:'',note:'',showNote:false},{id:2,cat:'qr',amount:'',note:'',showNote:false},{id:3,cat:'scb',amount:'',note:'',showNote:false},{id:4,cat:'kbank',amount:'',note:'',showNote:false}],nextId:5,expenseItems:[],nextExpenseId:1,cancelledBills:[],nextCancelId:1,attachments:[],salesDocs:[],showCatPicker:false,showAllAttachments:false,showAllDocs:false,draggedId:null,dragOverId:null,reportDate:today}));
-    this.showToast('ส่งรายงานเรียบร้อยแล้ว','success');
+    const reportData={
+      branch:user.branchCode,branchName:user.branchName,date:reportDate,
+      totalSales:ms>0?ms:ti,manualSales:ms,totalIncome:ti,totalExpense:te,
+      totalCancelled:tc,remaining:ti-te,changeFloat:cf,
+      incomeItems:incomeItems.map(i=>({cat:i.cat,label:this.INCOME_CATS.find(c=>c.id===i.cat)?.label||i.cat,amount:parseFloat(i.amount)||0,note:i.note||''})),
+      expenseItems:expenseItems.map(i=>({cat:i.cat,label:this.EXPENSE_CATS.find(c=>c.id===i.cat)?.label||i.cat,amount:parseFloat(i.amount)||0,note:i.note||''})),
+      cancelledBills:cancelledBills.map(b=>({billNo:b.billNo,amount:parseFloat(b.amount)||0,reason:b.reason})),
+      status:'submitted',submittedBy:user.name,submittedAt:new Date().toISOString(),
+      attachments:uploadedAtts.map(a=>({name:a.name,url:a.url||'',driveId:a.driveId||''})),
+      salesDocs:uploadedDocs.map(d=>({name:d.name,url:d.url||'',ext:d.ext,size:d.size,driveId:d.driveId||''})),
+    };
+    try{
+      const result=await this.callAPI('submitReport',{report:reportData});
+      if(result.ok){
+        const newReport={...reportData,id:result.reportId};
+        const today=new Date().toISOString().slice(0,10);
+        this.setState(s=>({
+          reports:[newReport,...s.reports],view:'dashboard',
+          isSubmitting:false,submitProgress:'',
+          changeFloat:'',manualSales:'',
+          incomeItems:[{id:1,cat:'cash',amount:'',note:'',showNote:false},{id:2,cat:'qr',amount:'',note:'',showNote:false},{id:3,cat:'scb',amount:'',note:'',showNote:false},{id:4,cat:'kbank',amount:'',note:'',showNote:false}],
+          nextId:5,expenseItems:[],nextExpenseId:1,cancelledBills:[],nextCancelId:1,
+          attachments:[],salesDocs:[],showCatPicker:false,showAllAttachments:false,showAllDocs:false,
+          draggedId:null,dragOverId:null,reportDate:today,
+        }));
+        this.pushNotif(user.branchCode,'success','ส่งรายงานสำเร็จ','รายงานวันที่ '+this.fmtDate(reportDate)+' ถูกบันทึกแล้ว','history');
+        this.showToast('ส่งรายงานเรียบร้อยแล้ว','success');
+      }else{
+        this.showToast(result.error||'ส่งรายงานไม่สำเร็จ กรุณาลองใหม่','error');
+        this.setState({isSubmitting:false,submitProgress:''});
+      }
+    }catch(e){
+      this.showToast('ไม่สามารถเชื่อมต่อระบบได้ กรุณาลองใหม่','error');
+      this.setState({isSubmitting:false,submitProgress:''});
+    }
   }
 
-  approveEditRequest(id){const req=this.state.editRequests.find(r=>r.id===id);this.setState(s=>({editRequests:s.editRequests.map(r=>r.id===id?{...r,status:'approved'}:r)}));if(req)this.pushNotif(req.branch,'success','คำขอแก้ไขได้รับการอนุมัติ','รายงานวันที่ '+this.fmtDate(req.reportDate)+' แก้ไขได้แล้ว','history');this.showToast('อนุมัติคำขอแก้ไขแล้ว','success')}
-  rejectEditRequest(id){const req=this.state.editRequests.find(r=>r.id===id);this.setState(s=>({editRequests:s.editRequests.map(r=>r.id===id?{...r,status:'rejected'}:r)}));if(req)this.pushNotif(req.branch,'error','คำขอแก้ไขถูกปฏิเสธ','รายงานวันที่ '+this.fmtDate(req.reportDate)+' ไม่อนุมัติให้แก้ไข','history');this.showToast('ปฏิเสธคำขอแก้ไขแล้ว','error')}
+  async approveEditRequest(id){
+    const req=this.state.editRequests.find(r=>r.id===id);
+    this.setState(s=>({editRequests:s.editRequests.map(r=>r.id===id?{...r,status:'approved'}:r)}));
+    if(req)this.pushNotif(req.branch,'success','คำขอแก้ไขได้รับการอนุมัติ','รายงานวันที่ '+this.fmtDate(req.reportDate)+' แก้ไขได้แล้ว','history');
+    this.showToast('อนุมัติคำขอแก้ไขแล้ว','success');
+    try{await this.callAPI('approveEditRequest',{requestId:id,reviewedBy:this.state.user?.name||''});}catch(e){}
+  }
+  async rejectEditRequest(id){
+    const req=this.state.editRequests.find(r=>r.id===id);
+    this.setState(s=>({editRequests:s.editRequests.map(r=>r.id===id?{...r,status:'rejected'}:r)}));
+    if(req)this.pushNotif(req.branch,'error','คำขอแก้ไขถูกปฏิเสธ','รายงานวันที่ '+this.fmtDate(req.reportDate)+' ไม่อนุมัติให้แก้ไข','history');
+    this.showToast('ปฏิเสธคำขอแก้ไขแล้ว','error');
+    try{await this.callAPI('rejectEditRequest',{requestId:id,reviewedBy:this.state.user?.name||''});}catch(e){}
+  }
   toggleNotif(){this.setState(s=>({showNotif:!s.showNotif}));}
   openNotif(n){this.setState(s=>({notifications:s.notifications.map(x=>x.id===n.id?{...x,read:true}:x),showNotif:false,view:n.view||s.view}));}
   markAllNotifRead(){this.setState(s=>({notifications:s.notifications.map(x=>({...x,read:true}))}));}
@@ -2022,7 +2193,10 @@ class Component extends DCLogic {
       onAddCancelledBill:()=>this.addCancelledBill(),
       remainingFmt:this.fmt(rem),
       remainingStyle:{fontSize:'18px',fontWeight:'700',color:rem<0?'#c0392b':'#3d8b3d',fontFamily:"'Outfit',sans-serif"},
-      onSubmitReport:()=>this.submitReport(),
+      isSubmitting:s.isSubmitting,
+      submitBtnLabel:s.isSubmitting?(s.submitProgress||'กำลังส่งรายงาน...'):'ส่งรายงาน',
+      submitBtnDisabled:s.isSubmitting,
+      onSubmitReport:()=>{if(!s.isSubmitting)this.submitReport();},
       onFileChange:(e)=>this.handleFileChange(e),
       onTriggerUpload:()=>{const el=document.getElementById('file-upload-input');if(el)el.click()},
       attachmentsUI, attachmentsPreview, hasAttachments:s.attachments.length>0,
