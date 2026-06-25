@@ -3140,25 +3140,23 @@ body{overscroll-behavior:none}
 </script>
 <script>
 // Re-inject raw template after dc-runtime boots.
-// Reason: browser HTML parser restructures <option> inside <sc-for> inside
-// <select>, corrupting the template. Storing in <script type="text/x-template">
-// prevents parsing. We re-apply after React + dc-runtime initialise.
+// Fix: browser HTML parser restructures <option>/<sc-for> inside <select>.
+// Fix: use __dcRootName() — component name comes from URL path, not 'Root'.
 (function(){
   var _el=document.getElementById('xdc-tpl');
   if(!_el)return;
   var _raw=_el.textContent;
   var _done=false;
-  function _inject(){
-    if(_done)return;
-    if(window.__dcUpdate){
-      _done=true;
-      window.__dcUpdate('Root','html',_raw);
-    }else{
-      setTimeout(_inject,50);
+  var _iv=setInterval(function(){
+    if(_done){clearInterval(_iv);return;}
+    if(window.__dcUpdate&&window.__dcRootName){
+      _done=true;clearInterval(_iv);
+      var _name=window.__dcRootName()||'Root';
+      window.__dcUpdate(_name,'html',_raw);
     }
-  }
-  // Start polling once support.js has had a chance to load React
-  setTimeout(_inject,200);
+  },100);
+  // Give up after 30s
+  setTimeout(function(){clearInterval(_iv);},30000);
 })();
 </script>
 </head>
